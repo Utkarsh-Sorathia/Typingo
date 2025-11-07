@@ -3,11 +3,7 @@ import { useLocation } from 'react-router-dom'
 
 declare global {
   interface Window {
-    gtag: (
-      command: 'config' | 'event' | 'js' | 'set',
-      targetId: string | Date,
-      config?: Record<string, any>
-    ) => void
+    gtag: (...args: any[]) => void
     dataLayer: any[]
   }
 }
@@ -16,8 +12,8 @@ interface GoogleAnalyticsProps {
   measurementId?: string
 }
 
-const GoogleAnalytics: React.FC<GoogleAnalyticsProps> = ({ 
-  measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID 
+const GoogleAnalytics: React.FC<GoogleAnalyticsProps> = ({
+  measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID,
 }) => {
   const location = useLocation()
 
@@ -27,27 +23,23 @@ const GoogleAnalytics: React.FC<GoogleAnalyticsProps> = ({
       return
     }
 
-    const script1 = document.createElement('script')
-    script1.async = true
-    script1.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`
-    document.head.appendChild(script1)
+    if (!document.querySelector(`script[src*="googletagmanager.com/gtag/js"]`)) {
+      const script = document.createElement('script')
+      script.async = true
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`
+      document.head.appendChild(script)
+    }
 
     window.dataLayer = window.dataLayer || []
-    function gtag(...args: any[]) {
+    window.gtag = function gtag(...args: any[]) {
       window.dataLayer.push(args)
     }
-    window.gtag = gtag as typeof window.gtag
 
-    gtag('js', new Date())
-    gtag('config', measurementId, {
-      page_path: location.pathname + location.search,
+    window.gtag('js', new Date())
+    window.gtag('config', measurementId, {
+      page_path: window.location.pathname + window.location.search,
     })
-
-    return () => {
-      const scripts = document.querySelectorAll(`script[src*="googletagmanager"]`)
-      scripts.forEach((script) => script.remove())
-    }
-  }, [])
+  }, [measurementId])
 
   useEffect(() => {
     if (window.gtag && measurementId) {
@@ -61,4 +53,3 @@ const GoogleAnalytics: React.FC<GoogleAnalyticsProps> = ({
 }
 
 export default GoogleAnalytics
-
