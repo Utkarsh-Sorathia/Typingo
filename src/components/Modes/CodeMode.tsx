@@ -134,16 +134,22 @@ const CodeMode: React.FC = () => {
       <Helmet>
         <title>Typingo | Code Typing Test</title>
         <meta name="description" content="Test and improve your code typing speed and accuracy with Typingo's Code Mode. Practice with random code snippets and track your WPM, accuracy, and errors." />
-        <meta name="keywords" content="typing test, code typing, speed test, accuracy, WPM, programming, Typingo" />
+        <meta name="keywords" content="typing test, code typing, speed test, accuracy, WPM, programming, coding practice, Typingo" />
+        <meta name="author" content="Typingo Team" />
         <meta property="og:title" content="Code Typing Test | Typingo" />
         <meta property="og:description" content="Challenge yourself with random code snippets. Measure your code typing speed and accuracy!" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="/code-mode-og-image.png" />
         <meta property="og:url" content="https://typingo.vercel.app/tests" />
+        <meta property="og:image" content="https://typingo.vercel.app/code-mode-og-image.png" />
+        <meta property="og:site_name" content="Typingo" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Code Typing Test | Typingo" />
+        <meta name="twitter:description" content="Challenge yourself with random code snippets. Measure your code typing speed and accuracy!" />
+        <meta name="twitter:image" content="https://typingo.vercel.app/code-mode-og-image.png" />
         <link rel="canonical" href="https://typingo.vercel.app/tests" />
       </Helmet>
 
-      <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="w-full max-w-7xl bg-white rounded-xl shadow-lg overflow-hidden mx-auto overflow-x-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-green-500 p-4 sm:p-6 text-white">
           <div className="flex flex-col sm:flex-row justify-between items-center">

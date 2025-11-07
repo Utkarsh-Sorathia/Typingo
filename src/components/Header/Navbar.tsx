@@ -22,7 +22,7 @@ const Navbar: React.FC = () => {
         <link rel="canonical" href="https://typingo.vercel.app/" />
       </Helmet>
 
-      <nav className="bg-white shadow-sm fixed w-full z-10">
+      <nav className="bg-white shadow-sm fixed w-full z-10 overflow-x-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             {/* Logo and Brand */}

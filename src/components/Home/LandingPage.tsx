@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Helmet } from 'react-helmet'
 import {
   FaArrowRight, FaSmile, FaUser, FaFire, FaCode, FaTrophy,
@@ -8,59 +8,55 @@ import {
 import clsx from 'clsx'
 import { Link } from 'react-router-dom'
 
-const TEST_TEXT = `The quick brown fox jumps over the lazy dog near the river bank. 
-This sentence contains every letter of the alphabet and is often used for typing practice. 
-Typing regularly helps improve speed and accuracy.`
-const TEST_DURATION = 30 // seconds
-
-function formatTime(sec: number) {
-  return `0:${sec < 10 ? '0' : ''}${sec}`
-}
+const TEST_TEXT = `The quick brown fox jumps over the lazy dog near the river bank.`
 
 const Typingo: React.FC = () => {
   const [userInput, setUserInput] = useState<string>('')
   const [started, setStarted] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(TEST_DURATION)
   const [wpm, setWpm] = useState(0)
   const [accuracy, setAccuracy] = useState(100)
   const [errors, setErrors] = useState(0)
   const [inputDisabled, setInputDisabled] = useState(true)
+  const [startTime, setStartTime] = useState<number | null>(null)
+  const [completed, setCompleted] = useState(false)
 
   // Refs
   const inputRef = useRef<HTMLInputElement>(null)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const quickTestRef = useRef<HTMLDivElement>(null)
+
+  // Scroll to quick test and focus input
+  const scrollToQuickTest = useCallback(() => {
+    if (quickTestRef.current) {
+      quickTestRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 300)
+    }
+  }, [])
 
   // Start test
-  const startTest = () => {
+  const startTest = useCallback(() => {
     setUserInput('')
     setStarted(true)
-    setTimeLeft(TEST_DURATION)
     setWpm(0)
     setAccuracy(100)
     setErrors(0)
     setInputDisabled(false)
-    setTimeout(() => inputRef.current?.focus(), 100)
-  }
-
-  // Timer effect
-  useEffect(() => {
-    if (!started) return
-    if (timeLeft === 0) {
-      setStarted(false)
-      setInputDisabled(true)
-      return
-    }
-    timerRef.current = setTimeout(() => setTimeLeft((t) => t - 1), 1000)
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
+    setStartTime(Date.now())
+    setCompleted(false)
+    scrollToQuickTest()
+    // Focus input after a short delay to ensure it's enabled
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus()
       }
-    }
-  }, [started, timeLeft])
+    }, 350)
+  }, [scrollToQuickTest])
 
-  // Typing logic
+  // Typing logic and completion check
   useEffect(() => {
-    if (!started) return
+    if (!started || !startTime || completed) return
+    
     const correctChars = userInput
       .split('')
       .filter((ch, i) => ch === TEST_TEXT[i]).length
@@ -70,46 +66,125 @@ const Typingo: React.FC = () => {
     setAccuracy(
       totalTyped === 0 ? 100 : Math.round((correctChars / totalTyped) * 100),
     )
-    const words = userInput.trim().split(/\s+/).filter(Boolean).length
-    setWpm(Math.round((words / (TEST_DURATION - timeLeft + 1)) * 60))
-  }, [userInput, started, timeLeft])
+
+    // Check if text is completed
+    if (userInput.length >= TEST_TEXT.length) {
+      const timeTaken = (Date.now() - startTime) / 1000 // in seconds
+      const words = TEST_TEXT.trim().split(/\s+/).filter(Boolean).length
+      const calculatedWpm = Math.round((words / timeTaken) * 60)
+      setWpm(calculatedWpm)
+      setCompleted(true)
+      setStarted(false)
+      setInputDisabled(true)
+    }
+  }, [userInput, started, startTime, completed])
 
   // Handle input
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUserInput(e.target.value)
+    if (completed || inputDisabled) return
+    const value = e.target.value
+    // Prevent typing beyond the test text length
+    if (value.length <= TEST_TEXT.length) {
+      setUserInput(value)
+    }
   }
 
-  // Text display with coloring
-  const renderText = () => (
-    <p className="font-mono break-words whitespace-pre-wrap">
-      {TEST_TEXT.split('').map((char, idx) => {
-        let className = ''
-        if (idx < userInput.length) {
-          className = char === userInput[idx] ? 'correct' : 'incorrect'
-        }
-        if (idx === userInput.length && started) className += ' current'
-        return (
-          <span key={idx} className={className}>
-            {char}
-          </span>
-        )
-      })}
-    </p>
-  )
+  // Handle keyboard events for space key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName
+      const isInputFocused = activeTag === 'INPUT' || activeTag === 'TEXTAREA'
+      
+      if (
+        e.code === 'Space' && 
+        !started && 
+        !isInputFocused &&
+        !inputDisabled
+      ) {
+        e.preventDefault()
+        scrollToQuickTest()
+      } else if (
+        e.code === 'Space' && 
+        !started && 
+        !isInputFocused &&
+        inputDisabled
+      ) {
+        e.preventDefault()
+        startTest()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [started, inputDisabled, scrollToQuickTest, startTest])
+
+  // Text display with coloring - memoized to prevent unnecessary re-renders
+  const renderedText = useMemo(() => {
+    // Freeze the display when completed
+    const displayInput = completed ? userInput.slice(0, TEST_TEXT.length) : userInput
+    const isActive = started && !completed
+    
+    return (
+      <p className="font-mono break-words whitespace-pre-wrap">
+        {TEST_TEXT.split('').map((char, idx) => {
+          let className = ''
+          if (idx < displayInput.length) {
+            className = char === displayInput[idx] ? 'correct' : 'incorrect'
+          }
+          // Only show current indicator when actively typing
+          if (idx === displayInput.length && isActive && !completed) {
+            className += ' current'
+          }
+          return (
+            <span key={idx} className={className}>
+              {char}
+            </span>
+          )
+        })}
+      </p>
+    )
+  }, [userInput, started, completed])
 
   return (
-    <div className="bg-slate-50 font-sans min-h-screen">
+    <div className="bg-white font-sans min-h-screen">
       {/* --- SEO TAGS --- */}
       <Helmet>
         <title>Typingo - Free Online Typing Test & Practice</title>
         <meta name="description" content="Boost your typing speed and accuracy with Typingo. Take interactive typing tests in multiple modes and track your progress!" />
         <meta name="keywords" content="typing test, typing speed, typing accuracy, online typing, typing practice, code typing, keyboard mastery" />
+        <meta name="author" content="Typingo Team" />
         <meta property="og:title" content="Typingo - Free Online Typing Test" />
         <meta property="og:description" content="Boost your typing speed and accuracy with Typingo. Take interactive typing tests in multiple modes and track your progress!" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://typingo.vercel.app" />
         <meta property="og:image" content="https://typingo.vercel.app/og-image.png" />
+        <meta property="og:site_name" content="Typingo" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Typingo - Free Online Typing Test" />
+        <meta name="twitter:description" content="Boost your typing speed and accuracy with Typingo. Take interactive typing tests in multiple modes and track your progress!" />
+        <meta name="twitter:image" content="https://typingo.vercel.app/og-image.png" />
         <link rel="canonical" href="https://typingo.vercel.app" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "Typingo",
+            "description": "Free online typing test and practice platform to improve your typing speed and accuracy",
+            "url": "https://typingo.vercel.app",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Web Browser",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.8",
+              "ratingCount": "1000"
+            }
+          })}
+        </script>
       </Helmet>
 
       {/* Hero Section */}
@@ -131,10 +206,17 @@ const Typingo: React.FC = () => {
                   onClick={startTest}
                   disabled={started}
                 >
-                  Start Typing Test <FaArrowRight className="ml-2" />
+                  Start Quick Test <FaArrowRight className="ml-2" />
                 </button>
                 <a
                   href="#modes"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    const modesSection = document.getElementById('modes')
+                    if (modesSection) {
+                      modesSection.scrollIntoView({ behavior: 'smooth' })
+                    }
+                  }}
                   className="px-8 py-3 bg-white text-gray-800 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-all shadow hover:shadow-md text-center"
                 >
                   Explore Modes
@@ -143,32 +225,53 @@ const Typingo: React.FC = () => {
             </div>
             {/* Right */}
             <div className="md:w-1/2 flex justify-center w-full">
-              <div className="relative max-w-md w-full">
+              <div className="relative max-w-md w-full" ref={quickTestRef}>
                 <div className="bg-white p-4 sm:p-6 rounded-xl shadow-xl floating glow transition-all duration-300">
                   <div className="flex justify-between items-center mb-4">
                     <span
-                      className="px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition bg-blue-100 text-blue-800"
-                      onClick={() => inputRef.current?.focus()}
+                      className="px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      onClick={scrollToQuickTest}
                     >
                       Quick Test
                     </span>
-                    <span className="text-sm text-gray-500">
-                      {formatTime(timeLeft)}
-                    </span>
+                    {completed && (
+                      <span className="text-sm text-green-600 font-medium">
+                        Completed!
+                      </span>
+                    )}
+                    {!completed && started && (
+                      <span className="text-sm text-blue-600 font-medium">
+                        Typing...
+                      </span>
+                    )}
                   </div>
                   <div
                     id="textDisplay"
-                    className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 h-40 sm:h-52 overflow-y-auto border font-mono text-base"
+                    className={`bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 min-h-20 max-h-32 overflow-y-auto border font-mono text-base ${
+                      completed ? 'opacity-90' : ''
+                    }`}
                   >
-                    {renderText()}
+                    {renderedText}
                   </div>
                   <input
                     ref={inputRef}
                     value={userInput}
                     onChange={handleInput}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (!inputDisabled && inputRef.current) {
+                        inputRef.current.focus()
+                      }
+                    }}
+                    onMouseDown={() => {
+                      if (!inputDisabled && inputRef.current) {
+                        inputRef.current.focus()
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-text"
                     placeholder="Start typing here..."
                     disabled={inputDisabled}
+                    tabIndex={inputDisabled ? -1 : 0}
                   />
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4 text-center">
                     <div className="bg-gray-100 p-2 rounded">
@@ -184,6 +287,39 @@ const Typingo: React.FC = () => {
                       <p className="font-bold">{errors}</p>
                     </div>
                   </div>
+
+                  {/* Action Buttons - Show when completed */}
+                  {completed && (
+                    <div className="mt-6 space-y-3">
+                      <p className="text-center text-sm text-gray-600 mb-4">
+                        Ready for a bigger challenge? Try these modes:
+                      </p>
+                      <div className="flex gap-3">
+                        <Link
+                          to="/tests"
+                          className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center"
+                        >
+                          <FaFire className="mr-2" />
+                          Hard Mode
+                          <FaArrowRight className="ml-2" />
+                        </Link>
+                        <Link
+                          to="/time-base"
+                          className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-medium hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center"
+                        >
+                          <FaClock className="mr-2" />
+                          Time-Based Mode
+                          <FaArrowRight className="ml-2" />
+                        </Link>
+                      </div>
+                      <button
+                        onClick={startTest}
+                        className="w-full px-6 py-3 bg-white text-gray-800 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-all shadow hover:shadow-md"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -203,7 +339,7 @@ const Typingo: React.FC = () => {
               difficulty levels.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Easy */}
             <Link to="/tests">
               <ModeCard
@@ -224,7 +360,7 @@ const Typingo: React.FC = () => {
                 icon={<FaUser className="text-xl" />}
                 color="blue"
                 title="Normal Mode"
-                desc="Standard typing test with regular text passages."
+                desc="Standard typing test with regular text passages. Ideal for intermediate typists."
                 highlight={
                   <>
                     <FaCheckCircle className="mr-1" /> Backspace allowed
@@ -238,7 +374,7 @@ const Typingo: React.FC = () => {
                 icon={<FaFire className="text-xl" />}
                 color="red"
                 title="Hard Mode"
-                desc="No backspace allowed! Mistakes are permanent."
+                desc="No backspace allowed! Mistakes are permanent and test your precision."
                 highlight={
                   <>
                     <FaTimesCircle className="mr-1" /> No backspace
@@ -252,19 +388,17 @@ const Typingo: React.FC = () => {
                 icon={<FaCode className="text-xl" />}
                 color="purple"
                 title="Code Mode"
-                desc="Practice typing code with special characters."
+                desc="Practice typing code with special characters and syntax. Perfect for developers."
                 highlight={<><FaCode className="mr-1" /> Code syntax</>}
               />
             </Link>
-          </div>
-          {/* Mastery Section: Stack on mobile, row on desktop */}
-          <div className="flex flex-col lg:flex-row gap-4 mt-8 justify-center">
-            <Link to="/time-base" className="flex-1">
+            {/* Time-Based */}
+            <Link to="/time-base">
               <ModeCard
                 icon={<FaClock className="text-xl" />}
                 color="purple"
                 title="Time-Based Mode"
-                desc="Practice typing code with special characters."
+                desc="Test your typing speed against the clock with timed challenges."
                 highlight={
                   <>
                     <FaStopwatch className="mr-1" /> Time based
@@ -272,7 +406,8 @@ const Typingo: React.FC = () => {
                 }
               />
             </Link>
-            <Link to="/keyboard-mastery" className="flex-1">
+            {/* Keyboard Mastery */}
+            <Link to="/keyboard-mastery">
               <ModeCard
                 icon={<FaTrophy className="text-xl" />}
                 color="amber"
@@ -283,7 +418,6 @@ const Typingo: React.FC = () => {
                     <FaKeyboard className="mr-1" /> Advanced finger positioning
                   </>
                 }
-                center
               />
             </Link>
           </div>
@@ -353,51 +487,78 @@ interface ModeCardProps {
   title: string
   desc: string
   highlight: React.ReactNode
-  center?: boolean
 }
+
+const colorClasses: Record<string, { border: string; bg: string; text: string }> = {
+  green: {
+    border: 'border-green-500',
+    bg: 'bg-green-100',
+    text: 'text-green-600',
+  },
+  blue: {
+    border: 'border-blue-500',
+    bg: 'bg-blue-100',
+    text: 'text-blue-600',
+  },
+  red: {
+    border: 'border-red-500',
+    bg: 'bg-red-100',
+    text: 'text-red-600',
+  },
+  purple: {
+    border: 'border-purple-500',
+    bg: 'bg-purple-100',
+    text: 'text-purple-600',
+  },
+  amber: {
+    border: 'border-amber-500',
+    bg: 'bg-amber-100',
+    text: 'text-amber-600',
+  },
+}
+
 const ModeCard: React.FC<ModeCardProps> = ({
   icon,
   color,
   title,
   desc,
   highlight,
-  center,
-}) => (
-  <div
-    className={clsx(
-      'mode-card bg-white p-6 rounded-lg shadow-md border-t-4 cursor-pointer transition-all',
-      `border-t-${color}-500`,
-      center && 'mx-auto text-center',
-    )}
-    style={{ borderTopColor: `var(--tw-${color}-500, #000)` }}
-  >
-    <div
-      className={`w-12 h-12 bg-${color}-100 text-${color}-600 rounded-full flex items-center justify-center mb-4 mx-auto`}
-    >
-      {icon}
-    </div>
-    <h3
-      className={clsx(
-        'text-xl font-semibold mb-2 text-gray-800',
-        center && 'text-center',
-      )}
-    >
-      {title}
-    </h3>
-    <p className={clsx('text-gray-600 mb-4', center && 'text-center')}>
-      {desc}
-    </p>
+}) => {
+  const colors = colorClasses[color] || colorClasses.blue
+
+  return (
     <div
       className={clsx(
-        'text-sm font-medium flex items-center',
-        `text-${color}-600`,
-        center && 'justify-center',
+        'mode-card bg-white p-6 rounded-lg shadow-md border-t-4 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1',
+        colors.border,
       )}
     >
-      {highlight}
+      <div
+        className={clsx(
+          'w-12 h-12 rounded-full flex items-center justify-center mb-4 mx-auto',
+          colors.bg,
+          colors.text,
+        )}
+      >
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold mb-2 text-gray-800 text-center">
+        {title}
+      </h3>
+      <p className="text-gray-600 mb-4 text-center text-sm">
+        {desc}
+      </p>
+      <div
+        className={clsx(
+          'text-sm font-medium flex items-center justify-center',
+          colors.text,
+        )}
+      >
+        {highlight}
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 // --- StatCard Component ---
 interface StatCardProps {

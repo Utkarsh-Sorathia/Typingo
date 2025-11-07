@@ -33,4 +33,28 @@
         <priority>0.8</priority>
     </url>
 
+    <!-- Contact page -->
+    <url>
+        <loc>https://typingo.vercel.app/contact</loc>
+        <lastmod>2025-05-15T18:00:00.000Z</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+    <!-- Privacy Policy page -->
+    <url>
+        <loc>https://typingo.vercel.app/privacy-policy</loc>
+        <lastmod>2025-05-15T18:00:00.000Z</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+
+    <!-- Terms of Service page -->
+    <url>
+        <loc>https://typingo.vercel.app/terms-of-service</loc>
+        <lastmod>2025-05-15T18:00:00.000Z</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+
 </urlset>
