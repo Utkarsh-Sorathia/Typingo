@@ -15,7 +15,7 @@ const Tests: React.FC = () => {
   const [mode, setMode] = useState<'easy' | 'hard' | 'code'>('easy')
 
   return (
-    <div className="flex flex-col items-center justify-center p-2 sm:p-4 min-h-screen bg-gray-50">
+    <div className="flex flex-col items-center justify-center p-2 sm:p-4 bg-white overflow-x-hidden">
       {/* SEO Tags */}
       <Helmet>
         <title>Typing Test Challenge | Speed & Accuracy</title>
@@ -24,16 +24,21 @@ const Tests: React.FC = () => {
           content="Test your typing speed and accuracy with Easy, Hard, and Code modes. Challenge yourself and improve your skills!"
         />
         <meta name="keywords" content="typing test, speed test, accuracy, code typing, easy mode, hard mode, challenge" />
-        <meta name="author" content="Your Name" />
+        <meta name="author" content="Typingo Team" />
         <meta property="og:title" content="Typing Test Challenge" />
         <meta property="og:description" content="Measure your typing speed, improve your accuracy, and challenge yourself with multiple modes!" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="/typing-challenge-og.png" />
         <meta property="og:url" content="https://typingo.vercel.app/tests" />
+        <meta property="og:image" content="https://typingo.vercel.app/typing-challenge-og.png" />
+        <meta property="og:site_name" content="Typingo" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Typing Test Challenge | Typingo" />
+        <meta name="twitter:description" content="Measure your typing speed, improve your accuracy, and challenge yourself with multiple modes!" />
+        <meta name="twitter:image" content="https://typingo.vercel.app/typing-challenge-og.png" />
         <link rel="canonical" href="https://typingo.vercel.app/tests" />
       </Helmet>
 
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-7xl mx-auto">
         <div className="text-center mb-8 sm:mb-10">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-4 sm:mb-6 flex flex-col sm:flex-row items-center justify-center">
             <FontAwesomeIcon icon={faKeyboard} className="text-indigo-500 mr-0 sm:mr-4 mb-2 sm:mb-0" />
@@ -84,7 +89,7 @@ const Tests: React.FC = () => {
             </div>
           </button>
         </div>
-        <div className="typing-card p-4 sm:p-8 bg-white rounded-lg shadow-md">
+        <div className="typing-card">
           {mode === 'code' ? (
             <div className="text-center">
               <CodeMode />

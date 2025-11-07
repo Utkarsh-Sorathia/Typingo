@@ -166,19 +166,26 @@ export default function EasyMode() {
 
   // --- UI ---
   return (
-    <main className="flex items-center justify-center p-2 sm:p-4 font-sans" id="easy-mode">
+    <main className="flex items-center justify-center p-2 sm:p-4 font-sans overflow-x-hidden" id="easy-mode">
       {/* SEO tags */}
       <Helmet>
         <title>Typingo | Easy Typing Test</title>
         <meta name="description" content="Practice your typing skills with alphabets and words in Easy Mode. Track your speed and accuracy with Typingo." />
+        <meta name="keywords" content="typing test, easy mode, typing practice, speed test, accuracy, Typingo" />
+        <meta name="author" content="Typingo Team" />
         <meta property="og:title" content="Easy Typing Test | Typingo" />
         <meta property="og:description" content="Practice your typing skills with alphabets and words in Easy Mode. Track your speed and accuracy with Typingo." />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="/easy-mode-og-image.png" />
         <meta property="og:url" content="https://typingo.vercel.app/tests" />
+        <meta property="og:image" content="https://typingo.vercel.app/easy-mode-og-image.png" />
         <meta property="og:site_name" content="Typingo" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Easy Typing Test | Typingo" />
+        <meta name="twitter:description" content="Practice your typing skills with alphabets and words in Easy Mode. Track your speed and accuracy with Typingo." />
+        <meta name="twitter:image" content="https://typingo.vercel.app/easy-mode-og-image.png" />
+        <link rel="canonical" href="https://typingo.vercel.app/tests" />
       </Helmet>
-      <section className="w-full max-w-2xl md:max-w-4xl bg-white rounded-xl shadow-lg overflow-hidden">
+      <section className="w-full max-w-2xl md:max-w-7xl bg-white rounded-xl shadow-lg overflow-hidden">
         {/* Header */}
         <header className="bg-gradient-to-r from-blue-500 to-green-500 p-4 sm:p-6 text-white">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -187,30 +194,29 @@ export default function EasyMode() {
           </div>
         </header>
 
-        {/* Section Tabs */}
-        <nav className="flex flex-col xs:flex-row justify-center items-center gap-2 bg-gray-50 pt-4 pb-2">
-          <button
-            className={`w-full xs:w-auto px-4 py-2 rounded-t-lg font-semibold transition-colors ${section === 'alphabets'
-              ? 'bg-blue-500 text-white shadow'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            onClick={() => setSection('alphabets')}
-          >
-            Alphabets
-          </button>
-          <button
-            className={`w-full xs:w-auto px-4 py-2 rounded-t-lg font-semibold transition-colors ${section === 'words'
-              ? 'bg-blue-500 text-white shadow'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            onClick={() => setSection('words')}
-          >
-            Words
-          </button>
-        </nav>
-
         {/* Main Content */}
         <section className="p-4 sm:p-6">
+          {/* Section Tabs - Small Buttons */}
+          <nav className="flex justify-center items-center gap-2 mb-6">
+            <button
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${section === 'alphabets'
+                ? 'bg-blue-500 text-white shadow'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              onClick={() => setSection('alphabets')}
+            >
+              Alphabets
+            </button>
+            <button
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${section === 'words'
+                ? 'bg-blue-500 text-white shadow'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              onClick={() => setSection('words')}
+            >
+              Words
+            </button>
+          </nav>
           {section === 'alphabets' && (
             <>
               <div className="mb-6 sm:mb-8">

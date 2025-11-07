@@ -1,17 +1,16 @@
-// src/App.tsx
 import React from 'react'
+import { Toaster } from 'react-hot-toast'
 import Navbar from './components/Header/Navbar'
 import Routers from './routers/Routers'
 import Footer from './components/Footer/Footer'
 
 const App: React.FC = () => {
-  // const [mode, setMode] = useState<'easy' | 'hard'>('easy');
-
   return (
     <>
-      <div className="bg-gray-100">
+      <Toaster position="top-right" />
+      <div className="bg-white min-h-screen flex flex-col overflow-x-hidden">
         <Navbar />
-        <div className="min-h-screen pt-16">
+        <div className="pt-16 flex-grow overflow-x-hidden">
           <Routers />
         </div>
         <Footer />

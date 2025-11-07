@@ -7,8 +7,15 @@ import {
 
 type Mode = 5 | 10 | 15 | null
 
+// Default words for each mode
+const DEFAULT_WORDS: Record<5 | 10 | 15, string[]> = {
+  5: ['quick', 'brown', 'fox', 'jumps', 'over'],
+  10: ['the', 'quick', 'brown', 'fox', 'jumps', 'over', 'lazy', 'dog', 'near', 'river'],
+  15: ['the', 'quick', 'brown', 'fox', 'jumps', 'over', 'lazy', 'dog', 'near', 'river', 'bank', 'with', 'speed', 'and', 'grace'],
+}
+
 const HardMode: React.FC = () => {
-  const [mode, setMode] = useState<Mode>(null)
+  const [mode, setMode] = useState<Mode>(15)
   const [words, setWords] = useState<string[]>([])
   const [fullText, setFullText] = useState('')
   const [typedText, setTypedText] = useState('')
@@ -27,8 +34,14 @@ const HardMode: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  console.log(words)
-  // Effects
+  // Load default mode (15 words) on mount
+  useEffect(() => {
+    if (mode === 15 && words.length === 0) {
+      handleModeSelect(15)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useEffect(() => {
     if (startTime !== null && !testFinished) {
       intervalRef.current = setInterval(() => {
@@ -61,7 +74,7 @@ const HardMode: React.FC = () => {
         `https://random-word-api.vercel.app/api?words=${count}`,
       )
       const data = await response.json()
-      const selectedWords: string[] = Array.isArray(data) ? data : []
+      const selectedWords: string[] = Array.isArray(data) && data.length > 0 ? data : DEFAULT_WORDS[count]
       setWords(selectedWords)
       setOriginalWords(selectedWords)
       setFullText(selectedWords.join(' '))
@@ -74,7 +87,19 @@ const HardMode: React.FC = () => {
       setFinalStats({ wpm: 0, accuracy: 100, errors: 0 })
       setTimeout(() => inputRef.current?.focus(), 100)
     } catch (err) {
-      alert('Failed to fetch random words. Please try again.')
+      // Use default words if fetch fails
+      const defaultWords = DEFAULT_WORDS[count]
+      setWords(defaultWords)
+      setOriginalWords(defaultWords)
+      setFullText(defaultWords.join(' '))
+      setTypedText('')
+      setErrors(0)
+      setStartTime(null)
+      setTimer(0)
+      setTestFinished(false)
+      setMode(count)
+      setFinalStats({ wpm: 0, accuracy: 100, errors: 0 })
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
   }
 
@@ -85,7 +110,7 @@ const HardMode: React.FC = () => {
         `https://random-word-api.vercel.app/api?words=${mode}`,
       )
       const data = await response.json()
-      const selectedWords: string[] = Array.isArray(data) ? data : []
+      const selectedWords: string[] = Array.isArray(data) && data.length > 0 ? data : DEFAULT_WORDS[mode]
       setWords(selectedWords)
       setOriginalWords(selectedWords)
       setFullText(selectedWords.join(' '))
@@ -97,7 +122,18 @@ const HardMode: React.FC = () => {
       setFinalStats({ wpm: 0, accuracy: 100, errors: 0 })
       setTimeout(() => inputRef.current?.focus(), 100)
     } catch (err) {
-      alert('Failed to fetch random words. Please try again.')
+      // Use default words if fetch fails
+      const defaultWords = DEFAULT_WORDS[mode]
+      setWords(defaultWords)
+      setOriginalWords(defaultWords)
+      setFullText(defaultWords.join(' '))
+      setTypedText('')
+      setErrors(0)
+      setStartTime(null)
+      setTimer(0)
+      setTestFinished(false)
+      setFinalStats({ wpm: 0, accuracy: 100, errors: 0 })
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
   }
 
@@ -164,15 +200,22 @@ const HardMode: React.FC = () => {
       <Helmet>
         <title>Typingo | Hard Mode Typing Test</title>
         <meta name="description" content="Challenge yourself with Hard Mode in Typingo. Test your typing speed and accuracy with random words. Improve your WPM and accuracy in a fun, competitive environment." />
-        <meta name="keywords" content="typing test, hard mode, WPM, accuracy, speed test, typing challenge" />
+        <meta name="keywords" content="typing test, hard mode, WPM, accuracy, speed test, typing challenge, typing practice" />
+        <meta name="author" content="Typingo Team" />
         <link rel="canonical" href="https://typingo.vercel.app/tests" />
-        <meta property="og:image" content="/hard-mode-og-image.png" />
         <meta property="og:title" content="Hard Mode Typing Test | Typingo" />
         <meta property="og:description" content="Challenge yourself with Hard Mode in Typingo. Test your typing speed and accuracy with random words." />
         <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://typingo.vercel.app/tests" />
+        <meta property="og:image" content="https://typingo.vercel.app/hard-mode-og-image.png" />
+        <meta property="og:site_name" content="Typingo" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Hard Mode Typing Test | Typingo" />
+        <meta name="twitter:description" content="Challenge yourself with Hard Mode in Typingo. Test your typing speed and accuracy with random words." />
+        <meta name="twitter:image" content="https://typingo.vercel.app/hard-mode-og-image.png" />
       </Helmet>
 
-      <main className="w-full max-w-4xl bg-white rounded-xl shadow-lg overflow-hidden">
+      <main className="w-full max-w-7xl bg-white rounded-xl shadow-lg overflow-hidden mx-auto overflow-x-hidden">
         {/* Header */}
         <header className="bg-gradient-to-r from-blue-500 to-green-500 p-4 sm:p-6 text-white">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -185,25 +228,40 @@ const HardMode: React.FC = () => {
 
         <section className="p-4 sm:p-6">
           {/* Mode Selection */}
-          {!mode && !testFinished && (
+          {!testFinished && (
             <div className="mb-6 sm:mb-8 text-center">
               <h2 className="text-lg sm:text-xl font-semibold mb-4">Select Word Count</h2>
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
                 <button
                   onClick={() => handleModeSelect(5)}
-                  className="mode-btn w-full sm:w-auto px-6 py-3 bg-blue-200 text-primary rounded-lg font-medium hover:bg-primary/20 transition-all flex items-center justify-center"
+                  disabled={startTime !== null}
+                  className={`mode-btn w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center ${
+                    mode === 5
+                      ? 'bg-blue-500 text-white shadow'
+                      : 'bg-blue-200 text-blue-700 hover:bg-blue-300'
+                  } ${startTime !== null ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   <FaBolt className="mr-2" /> 5 Words
                 </button>
                 <button
                   onClick={() => handleModeSelect(10)}
-                  className="mode-btn w-full sm:w-auto px-6 py-3 bg-green-200 text-secondary rounded-lg font-medium hover:bg-secondary/20 transition-all flex items-center justify-center"
+                  disabled={startTime !== null}
+                  className={`mode-btn w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center ${
+                    mode === 10
+                      ? 'bg-green-500 text-white shadow'
+                      : 'bg-green-200 text-green-700 hover:bg-green-300'
+                  } ${startTime !== null ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   <FaFire className="mr-2" /> 10 Words
                 </button>
                 <button
                   onClick={() => handleModeSelect(15)}
-                  className="mode-btn w-full sm:w-auto px-6 py-3 bg-amber-500/10 text-amber-600 rounded-lg font-medium hover:bg-amber-500/20 transition-all flex items-center justify-center"
+                  disabled={startTime !== null}
+                  className={`mode-btn w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center ${
+                    mode === 15
+                      ? 'bg-amber-500 text-white shadow'
+                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                  } ${startTime !== null ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   <FaRocket className="mr-2" /> 15 Words
                 </button>
