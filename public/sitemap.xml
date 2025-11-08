@@ -41,6 +41,14 @@
         <priority>0.6</priority>
     </url>
 
+    <!-- About Us page -->
+    <url>
+        <loc>https://typingo.vercel.app/about</loc>
+        <lastmod>2025-05-15T18:00:00.000Z</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
     <!-- Privacy Policy page -->
     <url>
         <loc>https://typingo.vercel.app/privacy-policy</loc>

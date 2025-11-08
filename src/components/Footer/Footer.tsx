@@ -66,7 +66,15 @@ export default function Main() {
             {/* Legal & Support */}
             <div>
               <h3 className="text-lg font-semibold mb-3">Legal & Support</h3>
-              <ul className="space-y-2">
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <li>
+                  <Link
+                    to="/about"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    About Us
+                  </Link>
+                </li>
                 <li>
                   <Link
                     to="/contact"
